@@ -204,7 +204,17 @@ class Board:
                     self.board[i][j].selected = False
 
     def check_mate(self, color):
-         return False
+        if self.is_checked(color):
+            for i in range(self.rows):
+                for j in range(self.cols):
+                    if self.board[i][j].king and self.board[i][j].color == color:
+                        king = self.board[i][j]
+                        valid_moves = king.valid_moves(self.board)
+                        danger_moves = self.get_danger_moves(color)
+                        
+                        # If every valid move is a danger move, then checkmated
+                        return set(valid_moves).issubset(set(danger_moves))
+        return False
 
     def move(self, start, end, color):
         checkedBefore = self.is_checked(color)
