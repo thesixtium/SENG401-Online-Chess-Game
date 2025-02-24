@@ -4,12 +4,14 @@ from piece import Rook
 from piece import Pawn
 from piece import Queen
 from piece import Knight
+from piece import draw_math
 import time
 import pygame
+import constants
 
 
 class Board:
-    rect = (113, 113, 525, 525)
+    rect = constants.rect
     startX = rect[0]
     startY = rect[1]
     def __init__(self, rows, cols):
@@ -86,11 +88,10 @@ class Board:
             y, x = self.last[0]
             y1, x1 = self.last[1]
 
-            xx = (4 - x) +round(self.startX + (x * self.rect[2] / 8))
-            yy = 3 + round(self.startY + (y * self.rect[3] / 8))
+            xx, yy = draw_math(x, x, y)
             pygame.draw.circle(win, (0,0,255), (xx+32, yy+30), 34, 4)
-            xx1 = (4 - x) + round(self.startX + (x1 * self.rect[2] / 8))
-            yy1 = 3+ round(self.startY + (y1 * self.rect[3] / 8))
+
+            xx1, yy1 = draw_math(x, x1, y1)
             pygame.draw.circle(win, (0, 0, 255), (xx1 + 32, yy1 + 30), 34, 4)
 
         s = None
