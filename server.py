@@ -98,8 +98,6 @@ def threaded_client(conn, game, spec=False):
                         elif currentId == "w":
                             bo.p1Name = name
 
-                    #print("Recieved board from", currentId, "in game", game)
-
                     if bo.ready:
                         if bo.turn == "w":
                             bo.time1 = 900 - (time.time() - bo.startTime) - bo.storedTime1
@@ -107,7 +105,6 @@ def threaded_client(conn, game, spec=False):
                             bo.time2 = 900 - (time.time() - bo.startTime) - bo.storedTime2
 
                     sendData = pickle.dumps(bo)
-                    #print("Sending board to player", currentId, "in game", game)
 
                 conn.sendall(sendData)
 
@@ -186,13 +183,6 @@ while True:
             except:
                 g = 0
                 games[g] = Board(8,8)
-
-        '''if addr[0] in spectartor_ids and specs == 0:
-            spec = True
-            print("[SPECTATOR DATA] Games to view: ")
-            print("[SPECTATOR DATA]", games.keys())
-            g = 0
-            specs += 1'''
 
         print("[DATA] Number of Connections:", connections+1)
         print("[DATA] Number of Games:", len(games))
