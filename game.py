@@ -181,10 +181,58 @@ def connect():
     n = Network()
     return n.board
 
+def determine_winner(p1Time, p2Time, bo, run, color):
+    if not color == "s":
+        if p1Time <= 0:
+            bo = n.send("winner b")
+        elif p2Time <= 0:
+            bo = n.send("winner w")
 
-def main():
-    global turn, bo, name
+        if bo.check_mate("b"):
+            bo = n.send("winner b")
+        elif bo.check_mate("w"):
+            bo = n.send("winner w")
 
+    if bo.winner == "w":
+        end_screen(win, "White is the Winner!")
+        run = False
+    elif bo.winner == "b":
+        end_screen(win, "Black is the winner")
+        run = False
+
+    return bo, run
+
+def keyboard_input(event, bo, color):
+    if event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_q and color != "s":
+            # quit game
+            if color == "w":
+                bo = n.send("winner b")
+            else:
+                bo = n.send("winner w")
+
+        if event.key == pygame.K_RIGHT:
+            bo = n.send("forward")
+
+        if event.key == pygame.K_LEFT:
+            bo = n.send("back")
+
+    return bo
+
+def update_time(p1Time, p2Time, bo, color, count, clock):
+    if not color == "s":
+        p1Time = bo.time1
+        p2Time = bo.time2
+        if count == 60:
+            bo = n.send("get")
+            count = 0
+        else:
+            count += 1
+        clock.tick(30)
+
+    return p1Time, p2Time, bo, color, count
+
+def initialize(bo):
     color = bo.start_user
     count = 0
 
@@ -193,16 +241,15 @@ def main():
     clock = pygame.time.Clock()
     run = True
 
+    return color, count, bo, clock, run
+
+def main():
+    global turn, bo, name
+
+    color, count, bo, clock, run = initialize(bo)
+
     while run:
-        if not color == "s":
-            p1Time = bo.time1
-            p2Time = bo.time2
-            if count == 60:
-                bo = n.send("get")
-                count = 0
-            else:
-                count += 1
-            clock.tick(30)
+        p1Time, p2Time, bo, color, count = update_time(p1Time, p2Time, bo, color, count, clock)
 
         try:
             redraw_gameWindow(win, bo, p1Time, p2Time, color, bo.ready)
@@ -212,23 +259,7 @@ def main():
             run = False
             break
 
-        if not color == "s":
-            if p1Time <= 0:
-                bo = n.send("winner b")
-            elif p2Time <= 0:
-                bo = n.send("winner w")
-
-            if bo.check_mate("b"):
-                bo = n.send("winner b")
-            elif bo.check_mate("w"):
-                bo = n.send("winner w")
-
-        if bo.winner == "w":
-            end_screen(win, "White is the Winner!")
-            run = False
-        elif bo.winner == "b":
-            end_screen(win, "Black is the winner")
-            run = False
+        bo, run = determine_winner(p1Time, p2Time, bo, run, color)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -236,20 +267,7 @@ def main():
                 quit()
                 pygame.quit()
 
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_q and color != "s":
-                    # quit game
-                    if color == "w":
-                        bo = n.send("winner b")
-                    else:
-                        bo = n.send("winner w")
-
-                if event.key == pygame.K_RIGHT:
-                    bo = n.send("forward")
-
-                if event.key == pygame.K_LEFT:
-                    bo = n.send("back")
-
+            bo = keyboard_input(event, bo, color)
 
             if event.type == pygame.MOUSEBUTTONUP and color != "s":
                 if color == bo.turn and bo.ready:

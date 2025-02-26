@@ -129,6 +129,59 @@ class Board:
 
         return False
 
+    def castling(self, row, col, prev, color, changed):
+        self.reset_selected()
+        if self.board[prev[0]][prev[1]].moved == False and self.board[prev[0]][prev[1]].rook and self.board[row][
+            col].king and col != prev[1] and prev != (-1, -1):
+            castle = True
+            if prev[1] < col:
+                for j in range(prev[1] + 1, col):
+                    if self.board[row][j] != 0:
+                        castle = False
+
+                if castle:
+                    changed = self.move(prev, (row, 3), color)
+                    changed = self.move((row, col), (row, 2), color)
+                if not changed:
+                    self.board[row][col].selected = True
+
+            else:
+                for j in range(col + 1, prev[1]):
+                    if self.board[row][j] != 0:
+                        castle = False
+
+                if castle:
+                    changed = self.move(prev, (row, 6), color)
+                    changed = self.move((row, col), (row, 5), color)
+                if not changed:
+                    self.board[row][col].selected = True
+        else:
+            self.board[row][col].selected = True
+
+        return changed
+
+    def change_turn(self, changed):
+        if changed:
+            if self.turn == "w":
+                self.turn = "b"
+                self.reset_selected()
+            else:
+                self.turn = "w"
+                self.reset_selected()
+
+    def move_ontop_of_piece(self, row, col, prev, color, changed):
+        if self.board[prev[0]][prev[1]].color != self.board[row][col].color:
+            moves = self.board[prev[0]][prev[1]].move_list
+            if (col, row) in moves:
+                changed = self.move(prev, (row, col), color)
+
+            if self.board[row][col].color == color:
+                self.board[row][col].selected = True
+
+        else:
+            if self.board[row][col].color == color:
+                self.castling(row, col, prev, color, changed)
+
     def select(self, col, row, color):
         changed = False
         prev = (-1, -1)
@@ -150,52 +203,9 @@ class Board:
                 if self.board[row][col] != 0:
                     self.board[row][col].selected = True
             else:
-                if self.board[prev[0]][prev[1]].color != self.board[row][col].color:
-                    moves = self.board[prev[0]][prev[1]].move_list
-                    if (col, row) in moves:
-                        changed = self.move(prev, (row, col), color)
+                self.move_ontop_of_piece(row, col, prev, color, changed)
 
-                    if self.board[row][col].color == color:
-                        self.board[row][col].selected = True
-
-                else:
-                    if self.board[row][col].color == color:
-                        #castling
-                        self.reset_selected()
-                        if self.board[prev[0]][prev[1]].moved == False and self.board[prev[0]][prev[1]].rook and self.board[row][col].king and col != prev[1] and prev!=(-1,-1):
-                            castle = True
-                            if prev[1] < col:
-                                for j in range(prev[1]+1, col):
-                                    if self.board[row][j] != 0:
-                                        castle = False
-
-                                if castle:
-                                    changed = self.move(prev, (row, 3), color)
-                                    changed = self.move((row,col), (row, 2), color)
-                                if not changed:
-                                    self.board[row][col].selected = True
-
-                            else:
-                                for j in range(col+1,prev[1]):
-                                    if self.board[row][j] != 0:
-                                        castle = False
-
-                                if castle:
-                                    changed = self.move(prev, (row, 6), color)
-                                    changed = self.move((row,col), (row, 5), color)
-                                if not changed:
-                                    self.board[row][col].selected = True
-                            
-                        else:
-                            self.board[row][col].selected = True
-
-        if changed:
-            if self.turn == "w":
-                self.turn = "b"
-                self.reset_selected()
-            else:
-                self.turn = "w"
-                self.reset_selected()
+        self.change_turn(changed)
 
     def reset_selected(self):
         for i in range(self.rows):
@@ -216,9 +226,7 @@ class Board:
                         return set(valid_moves).issubset(set(danger_moves))
         return False
 
-    def move(self, start, end, color):
-        checkedBefore = self.is_checked(color)
-        changed = True
+    def update_position(self, start, end):
         nBoard = self.board[:]
         if nBoard[start[0]][start[1]].pawn:
             nBoard[start[0]][start[1]].first = False
@@ -227,6 +235,19 @@ class Board:
         nBoard[end[0]][end[1]] = nBoard[start[0]][start[1]]
         nBoard[start[0]][start[1]] = 0
         self.board = nBoard
+
+    def update_time(self, changed, start, end):
+        if changed:
+            self.last = [start, end]
+            if self.turn == "w":
+                self.storedTime1 += (time.time() - self.startTime)
+            else:
+                self.storedTime2 += (time.time() - self.startTime)
+            self.startTime = time.time()
+
+    def check_selected(self, color, start, end):
+        changed = True
+        checkedBefore = self.is_checked(color)
 
         if self.is_checked(color) or (checkedBefore and self.is_checked(color)):
             changed = False
@@ -241,14 +262,15 @@ class Board:
         else:
             self.reset_selected()
 
+        return changed
+
+    def move(self, start, end, color):
+        self.update_position(start, end)
+
+        changed = self.check_selected(color, start, end)
+
         self.update_moves()
-        if changed:
-            self.last = [start, end]
-            if self.turn == "w":
-                self.storedTime1 += (time.time() - self.startTime)
-            else:
-                self.storedTime2 += (time.time() - self.startTime)
-            self.startTime = time.time()
+        self.update_time(changed, start, end)
 
         return changed
 
